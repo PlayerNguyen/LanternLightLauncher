@@ -10,12 +10,12 @@
     "test": "cross-env NODE_ENV=test nyc mocha -r ts-node/register ./src/**/*.test.ts"
   },
   "devDependencies": {
-    "chai": "^4.3.6",
     "@types/chai": "^4.3.1",
     "@types/mocha": "^9.1.1",
     "@types/react": "^18.0.14",
     "@types/react-dom": "^18.0.5",
     "axios": "^0.27.2",
+    "chai": "^4.0.0-canary.2",
     "concurrently": "^7.2.2",
     "detect-port": "^1.3.0",
     "electron-mocha": "^11.0.2",

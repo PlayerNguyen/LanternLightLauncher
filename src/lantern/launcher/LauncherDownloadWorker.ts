@@ -6,6 +6,7 @@ import { AxiosStreamLoader } from "./../utils/request/AxiosHelper";
 import stream from "node:stream";
 import { Queue } from "./../platforms/utils/queue/common/Queue";
 import { createSha1 } from "../platforms/crypto/common/Crypto";
+import { isNetworkOnline } from "./Launcher";
 
 export interface ReferenceChecksum {
   hash: string;
@@ -75,21 +76,44 @@ export class UrlDownloadReference implements DownloadReference {
 export interface LaunchOptions {
   maxRetry?: number;
   onComplete?: (reference: DownloadReference) => void;
+  onFailed?: (error: Error, reference: DownloadReference) => void;
 }
 
 export class DownloadLaunchPad {
   private launchpad: Queue<DownloadReference> = new Queue();
 
   public async launch(launchOptions?: LaunchOptions): Promise<void> {
+    // If the launcher environment is offline, throw an exception
+    if (!isNetworkOnline()) {
+      throw new Error("No connection was established. Check your connection");
+    }
+
+    let _maxRetries =
+      launchOptions && launchOptions.maxRetry ? launchOptions.maxRetry : 3;
+    // Download every files tail-to-head
     while (!this.launchpad.isEmpty()) {
       let _currentItem = this.launchpad.pop();
+      let _retries = 0;
 
-      this.download(_currentItem).then((reference: DownloadReference) => {
-        // Execute onComplete
-        if (launchOptions && launchOptions.onComplete) {
-          launchOptions.onComplete(reference);
+      while (++_retries < _maxRetries) {
+        try {
+          // Download the current item
+          let _reference = await this.download(_currentItem);
+
+          // Execute onComplete
+          if (launchOptions && launchOptions.onComplete) {
+            launchOptions.onComplete(_reference);
+          }
+          break;
+        } catch (err) {
+          if (_retries === _maxRetries - 1) {
+            if (launchOptions && launchOptions.onFailed)
+              launchOptions.onFailed(err as Error, _currentItem);
+          } else {
+            _currentItem.progress.current = 0;
+          }
         }
-      });
+      }
     }
   }
 
