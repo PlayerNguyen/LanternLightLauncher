@@ -75,7 +75,6 @@ describe("Launcher", () => {
         }
 
         expect(getAppData()).to.include(element.expectation);
-        expect(fs.existsSync(getAppData())).true;
       });
     });
   });
