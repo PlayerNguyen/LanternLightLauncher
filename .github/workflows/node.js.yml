@@ -19,6 +19,7 @@ jobs:
         node-version: [14.x, 16.x]
         os:
           [ubuntu-latest, windows-latest, macos-latest, macos-12, windows-2019]
+        arch: [x64, x86, arm64, armv6l, armv7l, ppc64le, s390x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -27,10 +28,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          # cache: "npm"
+          # Testing with different arch
+          architecture: ${{ matrix.arch }}
+          # Cache dependencies
+          cache: "yarn"
           # path: "client"
-      - name: "Installing dependencies" 
-        run: yarn install
+      - name: "Installing dependencies"
+        run: yarn install --frozen-lockfile
         # working-directory: "client"
 
       - name: "Running test cases"
