@@ -14,7 +14,6 @@ export function getCurrentJavaRuntimeVersion() {
   }
 
   return _firstLine.split(" ")[2].replace(/"/g, "");
-  // let _version =
 }
 
 export function hasJavaRuntime() {
@@ -26,6 +25,8 @@ export function buildAssetReleaseAdoptiumUrl(version: number) {
 
   let _query = querystring.stringify({
     image_type: "jre",
+
+    architecture: "x64",
   });
   return `${
     getLauncherMetadata().API.Url.AdoptiumAPIUrlV3

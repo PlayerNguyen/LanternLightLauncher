@@ -60,6 +60,7 @@ describe("LauncherJavaRuntime", () => {
   ];
   let _query = querystring.stringify({
     image_type: "jre",
+    architecture: "x64",
   });
   it(`Build a Adoptium url`, () => {
     _sample.forEach((_item) => {
