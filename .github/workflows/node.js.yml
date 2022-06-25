@@ -28,5 +28,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
+          path: "client"
       - run: yarn install
+        working-directory: "client"
       - run: yarn test
+        working-directory: "client"
