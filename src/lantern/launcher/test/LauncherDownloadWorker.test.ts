@@ -1,11 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { expect } from "chai";
-import {
-  getAppData,
-  getLauncherAppData,
-  getLauncherMetadata,
-} from "../Launcher";
+import { getLauncherAppData } from "../Launcher";
 import {
   LauncherDownLoadWorker,
   ReferenceChecksumSHA1,
@@ -14,7 +10,8 @@ import {
 
 describe("LauncherDownloadWorker", () => {
   afterEach(() => {
-    fs.rmdirSync(getLauncherAppData(), { recursive: true });
+    if (fs.existsSync(getLauncherAppData()))
+      fs.rmdirSync(getLauncherAppData(), { recursive: true });
   });
   it(`download test`, async function () {
     this.timeout(0);
