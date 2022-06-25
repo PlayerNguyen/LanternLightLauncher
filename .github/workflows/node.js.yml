@@ -15,7 +15,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x]
+        # Require NodeJS version 14 and up
+        node-version: [14.x, 16.x]
         os:
           [ubuntu-latest, windows-latest, macos-latest, macos-12, windows-2019]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
