@@ -76,6 +76,7 @@ export class UrlDownloadReference implements DownloadReference {
 export interface LaunchOptions {
   maxRetry?: number;
   onComplete?: (reference: DownloadReference) => void;
+  onFailed?: (error: Error, reference: DownloadReference) => void;
 }
 
 export class DownloadLaunchPad {
@@ -105,8 +106,9 @@ export class DownloadLaunchPad {
           }
           break;
         } catch (err) {
-          if (_retries == _maxRetries - 1) {
-            throw err;
+          if (_retries === _maxRetries - 1) {
+            if (launchOptions && launchOptions.onFailed)
+              launchOptions.onFailed(err as Error, _currentItem);
           } else {
             _currentItem.progress.current = 0;
           }
