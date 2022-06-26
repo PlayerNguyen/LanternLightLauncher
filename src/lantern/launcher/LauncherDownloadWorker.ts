@@ -70,6 +70,17 @@ export class UrlDownloadReference implements DownloadReference {
     this.progress = new ReferenceProgress();
     this.sum = sum;
   }
+
+  public static createFromPath(
+    _path: string,
+    url: string,
+    sum?: ReferenceChecksum
+  ) {
+    let head = path.dirname(_path);
+    let filename = path.basename(_path);
+
+    return new UrlDownloadReference(filename, head, url, sum);
+  }
 }
 
 export interface LaunchOptions {
@@ -81,6 +92,9 @@ export class DownloadLaunchPad {
   private launchpad: Queue<DownloadReference> = new Queue();
 
   public async launch(launchOptions?: LaunchOptions): Promise<void> {
+    if (this.launchpad.isEmpty()) {
+      throw new Error(`Launchpad has not spaceship (queue is empty)`);
+    }
     while (!this.launchpad.isEmpty()) {
       let _currentItem = this.launchpad.pop();
 
@@ -207,4 +221,8 @@ function printDownloadWorker(things: any) {
       }`
     )}`
   );
+}
+
+export function getLaunchpad() {
+  return LauncherDownLoadWorker.getLaunchPad();
 }

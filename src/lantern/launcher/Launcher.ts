@@ -7,7 +7,20 @@ export function getLauncherMetadata() {
   return {
     FullName: "Lantern Light",
     ShortName: "Lantern",
+    /**
+     * @deprecated using Path and Filename instead
+     */
     ConfigFileName: "lantern_config.json",
+    Path: {
+      Version: {
+        Metadata: path.join(`versions`, `metadata`),
+        Asset: path.join(`versions`, `indexes`),
+      },
+    },
+    Filename: {
+      Config: "lantern_config.json",
+      VersionManifest: "lantern_manifest_version.json",
+    },
     API: {
       Url: {
         MinecraftVersionManifestUrl:
@@ -62,7 +75,7 @@ export class Launcher {
   constructor() {
     // Init configuration class
     this.config = new LauncherConfigProvider(
-      getLauncherMetadata().ConfigFileName,
+      getLauncherMetadata().Filename.Config,
       getLauncherAppData()
     );
   }
