@@ -247,11 +247,15 @@ export async function getVersionMetadata(
 
   // If the file is not exist, download the version metadata
   if (!fs.existsSync(_filePath)) {
-    getDownloadWorker().addReference(
+    console.log(
       UrlDownloadReference.createFromPath(_filePath, _version.url.toString())
     );
 
-    await getDownloadWorker().launch();
+    // getDownloadWorker().addReference(
+
+    // );
+
+    // await getDownloadWorker().launch();
   }
 
   return JSON.parse(fs.readFileSync(_filePath, "utf-8"));
