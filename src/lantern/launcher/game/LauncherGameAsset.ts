@@ -1,21 +1,23 @@
 import chalk from "chalk";
 import {
-  getLaunchpad,
-  LauncherDownLoadWorker,
+  getDownloadWorker,
   ReferenceChecksumSHA1,
   UrlDownloadReference,
 } from "./../LauncherDownloadWorker";
-import { MinecraftVersionMetadata } from "./../LauncherVersion";
+import {
+  getVersionMetadata,
+  MinecraftVersionMetadata,
+} from "./../LauncherVersion";
 import { getVersionManifest } from "../LauncherVersion";
 import path from "path";
 import fs from "fs";
-import { getLauncherAppData } from "../Launcher";
+import { getLauncherAppData, getLauncherMetadata } from "../Launcher";
 
 export async function buildGameFile(version: string) {
   // Build a launcher version manifest
   let _versionManifest = await getVersionManifest();
 
-  // Looking for current version. If found, throw an error
+  // Looking for current version. Unless found, throw an error
   let _currentVersion = _versionManifest.versions.find(
     (_version) => _version.id === version
   );
@@ -24,42 +26,113 @@ export async function buildGameFile(version: string) {
   }
 
   // Build a game asset index
-
-  // buildGameAsset(version, _ver);
+  await buildGameAsset(version);
 }
 
-async function buildGameAsset(
-  version: string,
-  metadata: MinecraftVersionMetadata
-) {
-  let _versionPath = await getGameAssetIndexFilePath(version);
+async function buildGameAsset(version: string) {
+  let metadata = await getVersionMetadata(version);
 
-  // Check if the current asset name is built
-  if (!fs.existsSync(_versionPath)) {
-    // Download asset index from metadata
-    LauncherDownLoadWorker.getLaunchPad().addReference(
-      UrlDownloadReference.createFromPath(
-        _versionPath,
-        metadata.assetIndex.url.toString(),
-        new ReferenceChecksumSHA1(metadata.assetIndex.sha1)
-      )
-    );
+  // Then, get game asset indexes
+  let gameIndexes = await getGameIndexesFromMetadata(metadata);
 
-    await getLaunchpad().launch({
-      onComplete(reference) {
-        console.log(chalk.green(`Successfully download asset index file.`));
-      },
+  gameIndexes.objects
+    .map((_object) => {
+      let currentPath = path.join(
+        getGameAssetObjectDirectoryPath(),
+        _object.hash.substring(0, 2),
+        _object.hash
+      );
+      let { hash, name, size } = _object;
+      return {
+        url: path.join(_object.hash.substring(0, 2), _object.hash),
+        path: currentPath,
+        hash,
+        name,
+        size,
+      };
+    })
+    .map((_object) => {
+      let _reference = UrlDownloadReference.createFromPath(
+        _object.path,
+        new URL(
+          _object.url,
+          getLauncherMetadata().API.Url.ResourceDownloadAPI
+        ).toString(),
+        _object.size,
+        new ReferenceChecksumSHA1(_object.hash)
+      );
+      return _reference;
+    })
+    .filter((o) => !fs.existsSync(o.path))
+    .forEach((ref) => {
+      getDownloadWorker().push(ref);
     });
-  }
 
-  // Then, download all resource indexes
-  // TODO: download me
+  let _ = await getDownloadWorker().downloadAllPendingItems();
+  if (_.length > 0) {
+    console.log(chalk.green(`Successfully download ${_.length} items`));
+  } else {
+    console.log(chalk.green(`The asset objects already up-to-date`));
+  }
 }
 
 export async function getGameAssetIndexFilePath(version: string) {
-  return path.join(getLauncherAppData(), "assets", version + ".json");
+  return path.join(getGameAssetDirectoryPath(), "indexes", version + ".json");
 }
 
-export async function getGameAssetDirectoryPath() {
+export function getGameAssetDirectoryPath() {
   return path.join(getLauncherAppData(), "assets");
+}
+
+export function getGameAssetObjectDirectoryPath() {
+  return path.join(getGameAssetDirectoryPath(), `objects`);
+}
+
+export async function getGameIndexesFromMetadata(
+  metadata: MinecraftVersionMetadata
+): Promise<{ objects: [{ name: string; hash: string; size: number }] }> {
+  let _assetIndexRef = metadata.assetIndex;
+  let _filePath = await getGameAssetIndexFilePath(_assetIndexRef.id);
+
+  // Check if the indexes is available or not
+  if (!fs.existsSync(_filePath)) {
+    // Download it
+    let _downloadReference = UrlDownloadReference.createFromPath(
+      _filePath,
+      _assetIndexRef.url.toString(),
+      _assetIndexRef.size,
+      new ReferenceChecksumSHA1(_assetIndexRef.sha1)
+    );
+
+    // Download the indexes file
+    let _ref = await getDownloadWorker().download(_downloadReference);
+    let __path = path.join(_ref.path, _ref.name);
+
+    // Sanitize things for the first download
+    // And then just read it as utf-8 encoding
+    let _unsanitized: { objects: any } = JSON.parse(
+      fs.readFileSync(__path, "utf-8")
+    );
+    // Let sanitize this object
+    let _sanitized: any = {
+      objects: [],
+    };
+    for (let key in _unsanitized.objects) {
+      // let _name = _unsanitized.objects[key];
+      let _refined = {
+        name: key,
+        hash: _unsanitized.objects[key]["hash"],
+        size: _unsanitized.objects[key]["size"],
+      };
+      _sanitized.objects.push(_refined);
+    }
+
+    // Write it into a current file
+    fs.writeFileSync(__path, JSON.stringify(_sanitized, null, 0), {
+      encoding: "utf-8",
+      flag: "w+",
+    });
+  }
+
+  return JSON.parse(fs.readFileSync(_filePath, "utf-8"));
 }

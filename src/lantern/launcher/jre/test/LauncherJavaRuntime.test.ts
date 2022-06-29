@@ -69,8 +69,8 @@ describe("LauncherJavaRuntime", () => {
     });
   });
 
-  it(`Fetched Java Runtime API`, function (done) {
-    this.slow();
+  it(`fetchJavaRuntime response`, function (done) {
+    this.timeout(0);
     fetchJavaRuntimeVersion(8).then((response) => {
       expect(response.data).not.to.be.undefined;
       // TODO: test response data content

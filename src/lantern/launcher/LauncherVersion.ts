@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import {
-  getLaunchpad as getDownloadWorker,
-  LauncherDownLoadWorker,
+  getDownloadWorker,
   UrlDownloadReference,
 } from "./LauncherDownloadWorker";
 import fs from "fs";
@@ -148,31 +147,30 @@ export function getVersionManifestFilePath(): string {
 /**
  * Download the version manifest file
  */
-function downloadManifestFile(): Promise<void> {
-  return new Promise(async (resolve, reject) => {
+export async function downloadManifestFile(): Promise<void> {
+  return new Promise((resolve, rej) => {
+    let _manifestParent = path.basename(getVersionManifestFilePath());
+
     // Make directory unless exist
-    if (!fs.existsSync(getVersionDirectoryPath())) {
-      fs.mkdirSync(getVersionDirectoryPath(), { recursive: true });
+    if (!fs.existsSync(_manifestParent)) {
+      fs.mkdirSync(_manifestParent, { recursive: true });
     }
 
-    // Prepare for launch
-    LauncherDownLoadWorker.getLaunchPad().addReference(
-      new UrlDownloadReference(
-        getLauncherMetadata().Filename.VersionManifest,
-        getVersionDirectoryPath(),
-        getLauncherMetadata().API.Url.MinecraftVersionManifestUrl
+    // Prepare for launch  and download the file
+    getDownloadWorker()
+      .download(
+        new UrlDownloadReference(
+          getLauncherMetadata().Filename.VersionManifest,
+          getVersionDirectoryPath(),
+          getLauncherMetadata().API.Url.MinecraftVersionManifestUrl
+        )
       )
-    );
-
-    // Download the file
-    await LauncherDownLoadWorker.getLaunchPad().launch({
-      onComplete() {
-        console.log(
-          chalk.green(`Successfully download the launcher version manifest`)
-        );
+      .then((_items) => {
         resolve();
-      },
-    });
+      })
+      .catch((error) => {
+        rej(error);
+      });
   });
 }
 
@@ -191,6 +189,7 @@ export async function updateManifestFile() {
     let _stats = fs.statSync(getVersionManifestFilePath());
 
     if (Date.now() - _stats.mtime.getTime() > VERSION_MANIFEST_UPDATE_OFFSET) {
+      console.log(`Version manifest file is old, generating a new file...`);
       return downloadManifestFile();
     }
     return;
@@ -247,15 +246,11 @@ export async function getVersionMetadata(
 
   // If the file is not exist, download the version metadata
   if (!fs.existsSync(_filePath)) {
-    console.log(
-      UrlDownloadReference.createFromPath(_filePath, _version.url.toString())
-    );
-
-    // getDownloadWorker().addReference(
-
-    // );
-
-    // await getDownloadWorker().launch();
+    await getDownloadWorker()
+      .push(
+        UrlDownloadReference.createFromPath(_filePath, _version.url.toString())
+      )
+      .downloadAllPendingItems();
   }
 
   return JSON.parse(fs.readFileSync(_filePath, "utf-8"));

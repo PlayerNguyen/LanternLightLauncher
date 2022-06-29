@@ -1,9 +1,10 @@
 import {
+  downloadManifestFile,
   getVersionMetadata,
   getVersionMetadataFilePath,
   MinecraftManifest,
 } from "./../LauncherVersion";
-import { AxiosJsonLoader } from "./../../utils/request/AxiosHelper";
+
 import { expect } from "chai";
 import {
   getVersionDirectoryPath,
@@ -12,16 +13,30 @@ import {
   updateManifestFile,
 } from "../LauncherVersion";
 import fs from "fs";
-import { getLauncherMetadata, LauncherRuntimePersist } from "../Launcher";
-import { createSha1 } from "../../platforms/crypto/common/Crypto";
+import { LauncherRuntimePersist } from "../Launcher";
 
 describe("LauncherVersion", () => {
-  beforeEach(function () {
-    this.slow();
+  after(function () {
+    // fs.rmSync(getVersionDirectoryPath(), { force: true, recursive: true });
   });
-  afterEach(function () {
-    fs.rmSync(getVersionDirectoryPath(), { force: true, recursive: true });
+
+  it(`should download and exist a manifest file`, async () => {
+    await downloadManifestFile();
+    expect(fs.existsSync(getVersionManifestFilePath())).to.be.true;
+
+    const _item = JSON.parse(
+      fs.readFileSync(getVersionManifestFilePath(), "utf-8")
+    ) as MinecraftManifest;
+
+    let _stats = fs.statSync(getVersionManifestFilePath());
+
+    expect(_item).to.have.property("latest").and.to.have.property(`release`);
+    expect(_item).to.have.property("latest").and.to.have.property(`snapshot`);
+    expect(Date.now() - _stats.mtime.getTime())
+      .to.gt(1)
+      .and.lt(10);
   });
+
   it("updateLauncherManifest without exist file", async function () {
     // More time to download
     this.timeout(10000);
@@ -63,6 +78,7 @@ describe("LauncherVersion", () => {
   });
 
   it(`getVersionMetadata`, async function () {
+    this.timeout(10000);
     let _manifest = await getVersionManifest();
     expect(_manifest).not.to.be.undefined;
     expect(_manifest.latest).not.to.be.undefined;
