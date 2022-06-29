@@ -5,7 +5,7 @@ import fs from "fs";
 import { AxiosStreamLoader } from "./../utils/request/AxiosHelper";
 import stream from "node:stream";
 import { Queue } from "./../platforms/utils/queue/common/Queue";
-import { createSha1 } from "../platforms/crypto/common/Crypto";
+import { createSha1, createSHA256 } from "../platforms/crypto/common/Crypto";
 import pLimit from "p-limit";
 
 import {
@@ -37,6 +37,16 @@ export abstract class ReferenceChecksumAbstract {
 export class ReferenceChecksumSHA1 extends ReferenceChecksumAbstract {
   public createHash(data: string): string {
     return createSha1(data);
+  }
+
+  checksum(data: string): boolean {
+    return this.createHash(data) === this.hash;
+  }
+}
+
+export class ReferenceChecksumSHA256 extends ReferenceChecksumAbstract {
+  public createHash(data: string): string {
+    return createSHA256(data);
   }
 
   checksum(data: string): boolean {
@@ -141,118 +151,6 @@ function printDownloadWorker(things: any) {
   );
 }
 
-/**
- * @deprecated using LauncherWorker with async instead because it going
- *  to be crash or un-resolved after finished download
- */
-export class DownloadLaunchPad {
-  private launchpad: Queue<DownloadReference> = new Queue();
-
- public async launch(launchOptions?: LaunchOptions) {
-    if (this.launchpad.isEmpty()) {
-      throw new Error(`Launchpad has not spaceship (queue is empty)`);
-    }
-    while (!this.launchpad.isEmpty()) {
-      try {
-        let _currentItem = this.launchpad.pop();
-
-        await this.download(_currentItem);
-
-        // Execute onComplete
-        if (launchOptions && launchOptions.onComplete) {
-          launchOptions.onComplete(_currentItem);
-        }
-      } catch {
-        break;
-      }
-    }
-  }
-
-  private async download(_currentItem: DownloadReference) {
-    return new Promise(async (res, rej) => {
-      // Pipe a data from current stream
-      let _data = await fetchStreamData(_currentItem);
-      // Create a stream to pipe data
-      let _path = path.join(_currentItem.path, _currentItem.name);
-
-      printDownloadWorker(`Downloading (${_currentItem.url}) -> (${_path})`);
-
-      //   Check if exists or not, unless exists, create a new one
-      if (!fs.existsSync(_currentItem.path)) {
-        fs.mkdirSync(_currentItem.path, { recursive: true });
-      }
-
-      // Update a size of file
-      if (_currentItem.progress) {
-        // console.log(_data.headers["content-length"]);
-
-        _currentItem.progress.length = Number.parseInt(
-          _data.headers["content-length"]
-        );
-      }
-
-      // Create a WriteStream to write all data
-      let _stream = fs.createWriteStream(_path, {
-        highWaterMark: 1024 * 1024,
-      });
-
-      // Pipe the stream
-      let _pipeStream = _data.data
-        .on("error", (error) => {
-          rej(error);
-        })
-        .on("data", (chunk) => {
-          if (_currentItem.progress) {
-            let _progress = _currentItem.progress;
-            _progress.current += chunk.length;
-
-            printDownloadWorker(
-              `${chalk.grey(_currentItem.name)} ~ [${
-                _progress.current <= _progress.length / 2
-                  ? chalk.red(_progress.current)
-                  : _progress.current <= _progress.length * (4 / 5)
-                  ? chalk.yellow(_progress.current)
-                  : chalk.green(_progress.current)
-              }${chalk.gray(`/`)}${chalk.green(_progress.length)}]`
-            );
-          }
-        })
-        .pipe(_stream);
-
-      _pipeStream.on("finish", () => {
-        if (_currentItem.sum) {
-          let _ = fs.readFileSync(_path, { encoding: "utf-8" });
-          printDownloadWorker(`Executing check-sum: `);
-          printDownloadWorker(
-            `Provide: ${chalk.bgYellow(_currentItem.sum.hash)}`
-          );
-          printDownloadWorker(
-            `Target:  ${
-              _currentItem.sum.checksum(_)
-                ? chalk.bgGreen(_currentItem.sum.createHash(_))
-                : chalk.bgRed(_currentItem.sum.createHash(_))
-            }`
-          );
-
-          // Failed to checksum, try to download the file again and checksum
-          if (!_currentItem.sum.checksum(_)) {
-            printDownloadWorker(`Failed to check sum`);
-            rej(new Error(`Failed to check sum`));
-          } else {
-            res(_currentItem);
-          }
-        } else {
-          res(_currentItem);
-        }
-      });
-    });
-  }
-
-  public addReference(reference: DownloadReference): DownloadReference {
-    return this.launchpad.push(reference);
-  }
-}
-
 export class DownloadWorker {
   private static instance?: DownloadWorker = undefined;
   private pendingItems: DownloadReference[] = [];
@@ -330,11 +228,18 @@ export class DownloadWorker {
             ref.progress.current += chunk.length;
             // console.log(ref.color);
 
-            if (ref.progress.current % 100 == 0) {
+            if (
+              ref.progress.current % 10 == 0 ||
+              ref.progress.current === ref.progress.length
+            ) {
               printDownloadWorker(
                 `(${ref.color(ref.name)}) [${chalk.yellow(
                   ref.progress.current
-                )}/${chalk.green(ref.progress.length)}]`
+                )}/${chalk.green(ref.progress.length)}] ${
+                  ref.progress.current === ref.progress.length
+                    ? chalk.bgGreen(`[finished]`)
+                    : ``
+                }`
               );
             }
 

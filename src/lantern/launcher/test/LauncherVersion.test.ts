@@ -34,7 +34,7 @@ describe("LauncherVersion", () => {
     expect(_item).to.have.property("latest").and.to.have.property(`snapshot`);
     expect(Date.now() - _stats.mtime.getTime())
       .to.gt(1)
-      .and.lt(10);
+      .and.lt(1000);
   });
 
   it("updateLauncherManifest without exist file", async function () {

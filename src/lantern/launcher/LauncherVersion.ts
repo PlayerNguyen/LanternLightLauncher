@@ -32,9 +32,9 @@ export interface MinecraftManifest {
   latest: MinecraftManifestLatestVersion;
   versions: MinecraftManifestVersion[];
 }
-type GameRuleAction = "allow" | "disallow";
-type RuleOperatingSystem = {
-  name: "windows" | "osx" | "";
+export type GameRuleAction = "allow" | "disallow";
+export type RuleOperatingSystem = {
+  name: "windows" | "osx" | "linux";
   version?: string;
 };
 
@@ -81,7 +81,7 @@ export interface MinecraftVersionMetadataJavaVersion {
 
 export interface MinecraftVersionMetadataLibrary {
   downloads: {
-    artifacts: {
+    artifact: {
       path: fs.PathLike | string;
       sha1: string;
       size: number;
@@ -89,10 +89,12 @@ export interface MinecraftVersionMetadataLibrary {
     };
   };
   name: string;
-  rules?: {
-    action: GameRuleAction;
-    os: RuleOperatingSystem;
-  };
+  rules?: [
+    {
+      action: GameRuleAction;
+      os: RuleOperatingSystem;
+    }
+  ];
 }
 
 export interface MinecraftVersionMetadata {

@@ -16,6 +16,8 @@ export function getLauncherMetadata() {
         Metadata: path.join(`versions`, `metadata`),
         AssetIndex: path.join(`assets`, `indexes`),
       },
+      Runtime: path.join(`runtime`),
+      LauncherLogs: path.join(`launcher-logs`),
     },
     Filename: {
       Config: "lantern_config.json",

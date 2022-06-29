@@ -1,5 +1,6 @@
 import {
   getLauncherAppData,
+  getLauncherMetadata,
   isNetworkOnline,
   setNetworkOnline,
 } from "./../../Launcher";
@@ -13,13 +14,21 @@ import {
 } from "../../LauncherVersion";
 import {
   buildGameFile,
+  buildJavaRuntime,
+  getDownloadedRuntimeFilePath,
   getGameAssetDirectoryPath,
   getGameAssetIndexFilePath,
   getGameAssetObjectDirectoryPath,
   getGameIndexesFromMetadata,
+  getLauncherLoggingDirectoryPath,
+  launchMinecraft,
 } from "../LauncherGameAsset";
 
 import fs from "fs";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+
+let argv = yargs(hideBin(process.argv)).argv;
 
 describe("LauncherGameAsset", () => {
   let _network = isNetworkOnline();
@@ -44,25 +53,27 @@ describe("LauncherGameAsset", () => {
     );
   });
   it(`getGameIndexesFromMetadata`, async () => {
-    let latestRelease = (await getVersionManifest()).latest.release;
+    // let latestRelease = (await getVersionManifest()).latest.release;
     expect(fs.existsSync(getVersionManifestFilePath())).true;
-    let _metadata = await getVersionMetadata(latestRelease);
-    expect(fs.existsSync(await getVersionMetadataFilePath(latestRelease))).true;
-    let _indexes = await getGameIndexesFromMetadata(_metadata);
-
-    expect(_indexes.objects).to.be.instanceOf(Array);
-
-    // Assume get the gameIndexes again, must return an array in objects
-    let _indexes2 = await getGameIndexesFromMetadata(_metadata);
-    expect(_indexes2.objects).to.be.instanceOf(Array);
+    // let _metadata = await getVersionMetadata(latestRelease);
+    // expect(fs.existsSync(await getVersionMetadataFilePath(latestRelease))).true;
+    // let _indexes = await getGameIndexesFromMetadata(_metadata);
+    // expect(_indexes.objects).to.be.instanceOf(Array);
+    // // Assume get the gameIndexes again, must return an array in objects
+    // let _indexes2 = await getGameIndexesFromMetadata(_metadata);
+    // expect(_indexes2.objects).to.be.instanceOf(Array);
   });
   it(`buildGameFile completely build`, async function () {
     this.timeout(0);
     let latestRelease = (await getVersionManifest()).latest.release;
+
+    // let latestRelease = "1.12.2";
     expect(async () => {
       await buildGameFile(latestRelease);
+
       // Must download a file
       expect(fs.existsSync(getGameAssetObjectDirectoryPath())).to.true;
+
       // Get from version
       let _assetIndexFilePath = await getGameAssetIndexFilePath(latestRelease);
       expect(fs.existsSync(_assetIndexFilePath)).to.true;
@@ -71,21 +82,66 @@ describe("LauncherGameAsset", () => {
         await getVersionMetadata(latestRelease)
       );
 
-      expect(
-        _gameIndexes.objects
-          .map((obj) => {
-            let _path = path.join(
-              getGameAssetObjectDirectoryPath(),
-              obj.hash.substring(0, 2),
-              obj.hash
-            );
-            // The line below to check predicates
-            // console.log(fs.existsSync(_path), path.basename(_path));
+      let _indexContainer = [];
+      for (let item in _gameIndexes.objects) {
+        let { hash, size }: { hash: string; size: number } =
+          _gameIndexes.objects[item];
+        _indexContainer.push({
+          hash,
+          size,
+          path: path.join(
+            getGameAssetObjectDirectoryPath(),
+            hash.substring(0, 2),
+            hash
+          ),
+        });
+      }
 
-            return fs.existsSync(_path);
-          })
+      // Check that all files must be true
+      expect(
+        _indexContainer
+          .map((_index) => fs.existsSync(_index.path))
           .every((x) => x)
       ).to.be.true;
-    }).to.not.throws();
+    }).not.throws();
+  });
+
+  it(`successfully build Java Runtime Environment - buildJavaRuntime`, async function () {
+    this.timeout(0);
+
+    let _latest = (await getVersionManifest()).latest.release;
+    let _metadata = await getVersionMetadata(_latest);
+    let _major = String(_metadata.javaVersion.majorVersion);
+    // Execute build java runtime
+    await buildJavaRuntime(_latest);
+
+    // Check if download file is exist
+    expect(fs.existsSync(getDownloadedRuntimeFilePath(_major))).to.be.true;
+  });
+
+  it(`launchMinecraft by using --launch`, async function () {
+    this.timeout(0);
+    if (!(argv as any).launch) {
+      this.skip();
+    } else {
+      let latestRelease = (await getVersionManifest()).latest.release;
+      expect(async () => {
+        let _username = (argv as any).username;
+        let _version = (argv as any).version;
+        console.log(argv);
+
+        // Launch the minecraft
+        await launchMinecraft(
+          _version ? _version : latestRelease,
+          _username ? _username : "Player_Nguyen"
+        );
+      }).to.not.throw();
+    }
+  });
+
+  it(`getLauncherLoggingDirectoryPath return launcher app data and launcher-logs`, () => {
+    let sample = getLauncherLoggingDirectoryPath();
+    expect(sample).to.includes(getLauncherAppData());
+    expect(sample).to.includes(getLauncherMetadata().Path.LauncherLogs);
   });
 });

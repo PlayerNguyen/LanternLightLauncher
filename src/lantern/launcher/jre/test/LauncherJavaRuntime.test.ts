@@ -5,71 +5,10 @@ import {
   buildAssetReleaseAdoptiumUrl,
   fetchJavaRuntimeVersion,
   hasJavaRuntime,
+  JavaRuntimeVersion,
 } from "../LauncherJavaRuntime";
 
 describe("LauncherJavaRuntime", () => {
-  let _sample = [
-    {
-      version: "7",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/7/ga`,
-    },
-    {
-      version: "8",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/8/ga`,
-    },
-    {
-      version: "9",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/9/ga`,
-    },
-    {
-      version: "10",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/10/ga`,
-    },
-    {
-      version: "11",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/11/ga`,
-    },
-    {
-      version: "14",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/14/ga`,
-    },
-    {
-      version: "15",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/15/ga`,
-    },
-    {
-      version: "17",
-      expectation: `${
-        getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-      }/assets/feature_releases/17/ga`,
-    },
-  ];
-  let _query = querystring.stringify({
-    image_type: "jre",
-    architecture: "x64",
-  });
-  it(`Build a Adoptium url`, () => {
-    _sample.forEach((_item) => {
-      expect(
-        buildAssetReleaseAdoptiumUrl(Number.parseInt(_item.version))
-      ).to.equal(_item.expectation + "?" + _query);
-    });
-  });
-
   it(`fetchJavaRuntime response`, function (done) {
     this.timeout(0);
     fetchJavaRuntimeVersion(8).then((response) => {
@@ -89,5 +28,11 @@ describe("LauncherJavaRuntime", () => {
     /**
      * TODO: getCurrentJavaRuntimeVersion test implementation
      */
+  });
+  it(`test java runtime version class (sematic)`, async () => {
+    let _version = new JavaRuntimeVersion("17.0.4");
+    expect(_version.major).to.equal("17");
+    expect(_version.minor).to.eq("0");
+    expect(_version.patch).to.equal("4");
   });
 });

@@ -1,8 +1,13 @@
+import { version } from "yargs";
 import { getLauncherMetadata } from "../Launcher";
 import querystring from "query-string";
 import { AxiosJsonLoader } from "../../utils/request/AxiosHelper";
 import { AxiosResponse } from "axios";
 import child from "child_process";
+import {
+  isMacOS,
+  isWindows,
+} from "../../platforms/environment/common/Environment";
 
 export function getCurrentJavaRuntimeVersion() {
   let _ = child.spawnSync("java", ["-version"]);
@@ -13,7 +18,7 @@ export function getCurrentJavaRuntimeVersion() {
     return undefined;
   }
 
-  return _firstLine.split(" ")[2].replace(/"/g, "");
+  return new JavaRuntimeVersion(_firstLine.split(" ")[2].replace(/"/g, ""));
 }
 
 export function hasJavaRuntime() {
@@ -25,12 +30,12 @@ export function buildAssetReleaseAdoptiumUrl(version: number) {
 
   let _query = querystring.stringify({
     image_type: "jre",
-
-    architecture: "x64",
+    os: isWindows() ? "windows" : isMacOS() ? "mac" : "linux",
+    architecture: process.arch === "x64" ? "x64" : "x32",
   });
   return `${
     getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-  }/assets/feature_releases/${String(version)}/ga?${_query}`;
+  }assets/feature_releases/${String(version)}/ga?${_query}`;
 }
 
 interface AdoptiumResponseDownloadContent {
@@ -72,6 +77,15 @@ interface AdoptiumReleaseBinary {
   updated_at: Date | string;
   scr_ref: string;
   project: "jdk" | "valhalla" | "metropolis" | "jfr" | "shenandoah";
+  package: {
+    checksum: string;
+    checksum_link: URL;
+    download_count: number;
+    link: string;
+    metadata_link: string;
+    name: string;
+    size: number;
+  };
 }
 
 interface AdoptiumRelease {
@@ -108,8 +122,25 @@ export interface AdoptiumReleaseResponse {
   data: AdoptiumRelease[];
 }
 
-export function fetchJavaRuntimeVersion(
+export async function fetchJavaRuntimeVersion(
   version: number
 ): Promise<AxiosResponse<AdoptiumRelease[]>> {
-  return AxiosJsonLoader.get(buildAssetReleaseAdoptiumUrl(version));
+  return await AxiosJsonLoader.get(buildAssetReleaseAdoptiumUrl(version));
+}
+
+export class JavaRuntimeVersion {
+  major?: string;
+  minor?: string;
+  patch?: string;
+
+  constructor(version: string) {
+    if (version.split(".").length === 0) {
+      throw new Error("Invalid version sematic");
+    }
+    const [major, minor, patch] = version.split(".");
+
+    if (major) this.major = major;
+    if (minor) this.minor = minor;
+    if (patch) this.patch = patch;
+  }
 }
