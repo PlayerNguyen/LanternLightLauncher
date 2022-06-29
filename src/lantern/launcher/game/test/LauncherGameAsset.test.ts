@@ -53,15 +53,14 @@ describe("LauncherGameAsset", () => {
     );
   });
   it(`getGameIndexesFromMetadata`, async () => {
-    // let latestRelease = (await getVersionManifest()).latest.release;
+    let latestRelease = (await getVersionManifest()).latest.release;
     expect(fs.existsSync(getVersionManifestFilePath())).true;
-    // let _metadata = await getVersionMetadata(latestRelease);
-    // expect(fs.existsSync(await getVersionMetadataFilePath(latestRelease))).true;
-    // let _indexes = await getGameIndexesFromMetadata(_metadata);
-    // expect(_indexes.objects).to.be.instanceOf(Array);
-    // // Assume get the gameIndexes again, must return an array in objects
-    // let _indexes2 = await getGameIndexesFromMetadata(_metadata);
-    // expect(_indexes2.objects).to.be.instanceOf(Array);
+
+    let _metadata = await getVersionMetadata(latestRelease);
+    expect(fs.existsSync(await getVersionMetadataFilePath(latestRelease))).true;
+
+    let _gameIndexes = await getGameIndexesFromMetadata(_metadata);
+    expect(_gameIndexes).to.have.property(`objects`);
   });
   it(`buildGameFile completely build`, async function () {
     this.timeout(0);
