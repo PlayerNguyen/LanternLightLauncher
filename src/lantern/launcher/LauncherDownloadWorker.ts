@@ -122,6 +122,7 @@ export class UrlDownloadReference implements DownloadReference {
 export interface LaunchOptions {
   maxRetry?: number;
   onComplete?: (reference: DownloadReference) => void;
+  onFailed?: (error: Error, reference: DownloadReference) => void;
 }
 
 function fetchStreamData(
@@ -147,7 +148,7 @@ function printDownloadWorker(things: any) {
 export class DownloadLaunchPad {
   private launchpad: Queue<DownloadReference> = new Queue();
 
-  public async launch(launchOptions?: LaunchOptions) {
+ public async launch(launchOptions?: LaunchOptions) {
     if (this.launchpad.isEmpty()) {
       throw new Error(`Launchpad has not spaceship (queue is empty)`);
     }
