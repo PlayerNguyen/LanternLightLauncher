@@ -33,7 +33,7 @@ describe("LauncherVersion", () => {
     expect(_item).to.have.property("latest").and.to.have.property(`release`);
     expect(_item).to.have.property("latest").and.to.have.property(`snapshot`);
     expect(Date.now() - _stats.mtime.getTime())
-      .to.gt(1)
+      .to.gt(-1)
       .and.lt(1000);
   });
 
