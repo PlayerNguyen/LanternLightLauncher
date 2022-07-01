@@ -1,6 +1,6 @@
 import querystring from "query-string";
 import { expect } from "chai";
-import { getLauncherMetadata } from "../../Launcher";
+import { getLauncherMetadata } from "../Launcher";
 import {
   buildAssetReleaseAdoptiumUrl,
   fetchJavaRuntimeVersion,

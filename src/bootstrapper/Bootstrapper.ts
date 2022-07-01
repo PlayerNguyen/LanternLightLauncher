@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
-import { NetworkChangeListener } from "./../lantern/listener/NetworkChangeListener";
-import { IPCListenerManager } from "./../lantern/listener/IPCListener";
+import { NetworkChangeListener } from "../lantern/listener/NetworkChangeListener";
+import { IPCListenerManager } from "../lantern/listener/IPCListener";
 import chalk from "chalk";
 import {
   getNodeVersion,

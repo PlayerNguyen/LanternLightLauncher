@@ -31,7 +31,7 @@ export class LauncherConfigProvider extends DiskFileSystemProvider {
   public loadDefault(): void {
     this.setCache(LauncherConfigDefaults);
     // Then save it as a file
-    this.writeFile(this.cache);
+    this.writeFile(LauncherConfigDefaults);
   }
 
   public writeFile(data: any, options?: WriteFileOptions | undefined): void {

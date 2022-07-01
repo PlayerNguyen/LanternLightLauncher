@@ -3,7 +3,7 @@ import {
   getVersionMetadata,
   getVersionMetadataFilePath,
   MinecraftManifest,
-} from "./../LauncherVersion";
+} from "../LauncherVersion";
 
 import { expect } from "chai";
 import {

@@ -81,18 +81,46 @@ export interface MinecraftVersionMetadataJavaVersion {
 
 export interface MinecraftVersionMetadataLibrary {
   downloads: {
-    artifact: {
+    classifiers?: {
+      "natives-linux": {
+        path: fs.PathLike | string;
+        sha1: string;
+        size: number;
+        url: URL | string;
+      };
+      "natives-macos": {
+        path: fs.PathLike | string;
+        sha1: string;
+        size: number;
+        url: URL | string;
+      };
+      "natives-windows": {
+        path: fs.PathLike | string;
+        sha1: string;
+        size: number;
+        url: URL | string;
+      };
+    };
+    artifact?: {
       path: fs.PathLike | string;
       sha1: string;
       size: number;
       url: URL | string;
     };
   };
+  extract?: {
+    exclude: string[];
+  };
   name: string;
+  natives?: {
+    linux?: "natives-linux";
+    osx?: "natives-macos";
+    windows?: "natives-windows";
+  };
   rules?: [
     {
       action: GameRuleAction;
-      os: RuleOperatingSystem;
+      os?: RuleOperatingSystem;
     }
   ];
 }
@@ -122,7 +150,7 @@ export interface MinecraftVersionMetadata {
   minimumLauncherVersion: number;
   releaseTime: Date;
   time: Date;
-  type: "release" | "snapshot";
+  type: "release" | "snapshot" | "old_alpha" | "old_beta";
 }
 
 /**

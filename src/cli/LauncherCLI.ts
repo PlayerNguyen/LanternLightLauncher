@@ -6,7 +6,7 @@ import { getVersionManifest } from "../lantern/launcher/LauncherVersion";
 import {
   buildGameFile,
   launchMinecraft,
-} from "../lantern/launcher/game/LauncherGameAsset";
+} from "../lantern/launcher/LauncherGameAsset";
 import { getLauncherAppData } from "../lantern/launcher/Launcher";
 
 yargs(hideBin(argv))

@@ -1,16 +1,28 @@
-import { version } from "yargs";
-import { getLauncherMetadata } from "../Launcher";
+import { URL } from "url";
+import path from "path";
+import { getLauncherMetadata } from "./Launcher";
 import querystring from "query-string";
-import { AxiosJsonLoader } from "../../utils/request/AxiosHelper";
+import { AxiosJsonLoader } from "../utils/request/AxiosHelper";
 import { AxiosResponse } from "axios";
 import child from "child_process";
 import {
   isMacOS,
   isWindows,
-} from "../../platforms/environment/common/Environment";
+} from "../platforms/environment/common/Environment";
+import fs from "fs";
+import {
+  getDownloadedRuntimeFilePath,
+  getDownloadedRuntimeJavaHome,
+} from "./LauncherGameAsset";
 
 export function getCurrentJavaRuntimeVersion() {
-  let _ = child.spawnSync("java", ["-version"]);
+  // Check launcher runtime is exist or not
+  let javaHome = "java";
+  if (fs.existsSync(getDownloadedRuntimeFilePath())) {
+    javaHome = getDownloadedRuntimeJavaHome();
+  }
+
+  let _ = child.spawnSync(javaHome, ["-version"]);
   if (!_ || !_.stderr) return undefined;
   let _searcher = new RegExp("(java|openjdk) version");
   let _firstLine = _.stderr.toString().split("\n")[0];
@@ -26,16 +38,17 @@ export function hasJavaRuntime() {
 }
 
 export function buildAssetReleaseAdoptiumUrl(version: number) {
-  // let _arch = process.arch;
-
   let _query = querystring.stringify({
     image_type: "jre",
     os: isWindows() ? "windows" : isMacOS() ? "mac" : "linux",
     architecture: process.arch === "x64" ? "x64" : "x32",
+    vendor: "eclipse",
   });
-  return `${
+
+  return new URL(
+    path.join(`assets`, `latest`, String(version), `hotspot?${_query}`),
     getLauncherMetadata().API.Url.AdoptiumAPIUrlV3
-  }assets/feature_releases/${String(version)}/ga?${_query}`;
+  );
 }
 
 interface AdoptiumResponseDownloadContent {
@@ -124,8 +137,9 @@ export interface AdoptiumReleaseResponse {
 
 export async function fetchJavaRuntimeVersion(
   version: number
-): Promise<AxiosResponse<AdoptiumRelease[]>> {
-  return await AxiosJsonLoader.get(buildAssetReleaseAdoptiumUrl(version));
+): Promise<AxiosResponse<AdoptiumLatestRelease.Response[]>> {
+  let _ = buildAssetReleaseAdoptiumUrl(version).toString();
+  return await AxiosJsonLoader.get(_);
 }
 
 export class JavaRuntimeVersion {
@@ -142,5 +156,58 @@ export class JavaRuntimeVersion {
     if (major) this.major = major;
     if (minor) this.minor = minor;
     if (patch) this.patch = patch;
+  }
+}
+
+declare module AdoptiumLatestRelease {
+  export interface Installer {
+    checksum: string;
+    checksum_link: string;
+    download_count: number;
+    link: string;
+    metadata_link: string;
+    name: string;
+    size: number;
+  }
+
+  export interface Package {
+    checksum: string;
+    checksum_link: string;
+    download_count: number;
+    link: string;
+    metadata_link: string;
+    name: string;
+    size: number;
+  }
+
+  export interface Binary {
+    architecture: string;
+    download_count: number;
+    heap_size: string;
+    image_type: string;
+    installer: Installer;
+    jvm_impl: string;
+    os: string;
+    package: Package;
+    project: string;
+    scm_ref: string;
+    updated_at: Date;
+  }
+
+  export interface Version {
+    build: number;
+    major: number;
+    minor: number;
+    openjdk_version: string;
+    security: number;
+    semver: string;
+  }
+
+  export interface Response {
+    binary: Binary;
+    release_link: string;
+    release_name: string;
+    vendor: string;
+    version: Version;
   }
 }

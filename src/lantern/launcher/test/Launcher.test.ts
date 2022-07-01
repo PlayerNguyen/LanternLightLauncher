@@ -6,7 +6,7 @@ import {
   LauncherRuntimeConfigurationDefault,
   LauncherRuntimePersist,
   setNetworkOnline,
-} from "./../Launcher";
+} from "../Launcher";
 import { expect } from "chai";
 import path from "path";
 import fs from "fs";

@@ -1,4 +1,4 @@
-import { Queue } from "./../common/Queue";
+import { Queue } from "../common/Queue";
 import { expect } from "chai";
 describe("Queue Data structure", () => {
   /**

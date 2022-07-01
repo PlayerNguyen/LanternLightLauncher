@@ -1,5 +1,5 @@
 import Electron from "electron";
-import { Launcher } from "./../launcher/Launcher";
+import { Launcher } from "../launcher/Launcher";
 /**
  * IPC name convention: lantern:${verb}-${nouns}-${adjective}
  * Examples: lantern:change-network, lantern:remove-listener-half

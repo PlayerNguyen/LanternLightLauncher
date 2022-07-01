@@ -1,4 +1,4 @@
-import { Persist } from "./../platforms/persist/common/Persist";
+import { Persist } from "../platforms/persist/common/Persist";
 import { LauncherConfigProvider } from "./LauncherConfig";
 import { isTesting } from "../platforms/environment/common/Environment";
 import path from "path";
