@@ -7,7 +7,8 @@
     "dev:watch-tsc": "tsc --build --clean && tsc -w",
     "dev:watch-electron": "wait-on file:./dist/App.js && cross-env NODE_ENV=development electronmon ./dist/App.js",
     "dev:watch-parcel": "cross-env PORT=1234 parcel serve ./src/render/Index.html --dist-dir ./dist/render --no-cache",
-    "test": "cross-env NODE_ENV=test nyc mocha -r ts-node/register ./src/**/*.test.ts"
+    "test": "cross-env NODE_ENV=test nyc mocha -r ts-node/register ./src/**/*.test.ts",
+    "cli": "cross-env NODE_ENV=cli ts-node ./src/cli/LauncherCLI.ts"
   },
   "devDependencies": {
     "@types/chai": "^4.3.1",
