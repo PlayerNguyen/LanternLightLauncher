@@ -259,23 +259,4 @@ describe("LauncherGameAsset", () => {
     // });
     // TODO: fix this
   });
-
-  describe("LibraryParser", () => {
-    it(`Compatible operating system test`, () => {
-      let testCases = [
-        { os: `osx`, expectation: isMacOS() },
-        { os: `linux`, expectation: isLinux() },
-        { os: `windows`, expectation: isWindows() },
-      ];
-
-      testCases.forEach((test) =>
-        expect(LibraryParser.isCompatibleOs(test.os)).eq(test.expectation)
-      );
-
-      // Fail case throw exception
-      expect(() => {
-        LibraryParser.isCompatibleOs(`sunos`);
-      }).to.throws(/Unexpected library/);
-    });
-  });
 });

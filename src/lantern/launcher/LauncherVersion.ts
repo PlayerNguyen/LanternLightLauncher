@@ -34,7 +34,8 @@ export interface MinecraftManifest {
 }
 export type GameRuleAction = "allow" | "disallow";
 export type RuleOperatingSystem = {
-  name: "windows" | "osx" | "linux";
+  name?: "windows" | "osx" | "linux" | string;
+  arch?: "x86" | "x64" | string;
   version?: string;
 };
 
@@ -45,13 +46,15 @@ export interface MinecraftVersionGameArgumentRule {
 
 export interface MinecraftVersionJVMArgumentRule {
   action: GameRuleAction;
-  os: RuleOperatingSystem;
+  os?: RuleOperatingSystem;
 }
 export interface MinecraftVersionArgument {
   game: [
-    string | { rules: MinecraftVersionGameArgumentRule[]; value: string[] }
+    | string
+    | { rules: MinecraftVersionGameArgumentRule[]; value: string[] | string }
   ];
-  jvm: [string | { rules: MinecraftVersionJVMArgumentRule[]; value: string[] }];
+  // jvm: [string | { rules: MinecraftVersionJVMArgumentRule[]; value: string[] | string }];
+  jvm: any[];
 }
 
 export interface MinecraftVersionMetadataAssetIndex {
