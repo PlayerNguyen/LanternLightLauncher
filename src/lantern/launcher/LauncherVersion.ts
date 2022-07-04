@@ -182,7 +182,7 @@ export function getVersionManifestFilePath(): string {
  */
 export async function downloadManifestFile(): Promise<void> {
   return new Promise((resolve, rej) => {
-    let _manifestParent = path.basename(getVersionManifestFilePath());
+    let _manifestParent = path.dirname(getVersionManifestFilePath());
 
     // Make directory unless exist
     if (!fs.existsSync(_manifestParent)) {
