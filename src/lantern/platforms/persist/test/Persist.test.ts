@@ -1,4 +1,4 @@
-import { Persist } from "./../common/Persist";
+import { Persist } from "../common/Persist";
 import { expect } from "chai";
 
 interface User {

@@ -1,9 +1,12 @@
 import { platform } from "process";
 import {
+  getRuntimePersist,
+  isNetworkOnline,
   Launcher,
   LauncherRuntimeConfigurationDefault,
   LauncherRuntimePersist,
-} from "./../Launcher";
+  setNetworkOnline,
+} from "../Launcher";
 import { expect } from "chai";
 import path from "path";
 import fs from "fs";
@@ -103,18 +106,6 @@ describe("Launcher", () => {
   describe(`Load the app launcher`, () => {
     let _launcherAppData = getLauncherAppData();
 
-    function cleanUpLauncher() {
-      fs.rmSync(_launcherAppData, { recursive: true, force: true });
-    }
-
-    beforeEach(() => {
-      cleanUpLauncher();
-    });
-    afterEach(() => {
-      // Clean up the Lantern directory
-      cleanUpLauncher();
-    });
-
     it(`Initialize: launcher should successfully init`, () => {
       expect(() => {
         let _launcher = new Launcher();
@@ -159,6 +150,13 @@ describe("Launcher", () => {
       expect(LauncherRuntimePersist.getRuntimePersist().data.network).to.eq(
         "online"
       );
+
+      // Or using setter function test
+      setNetworkOnline(false);
+      expect(isNetworkOnline()).to.be.false;
+
+      // Reset the network state
+      getRuntimePersist().setData(LauncherRuntimeConfigurationDefault);
     });
   });
 });

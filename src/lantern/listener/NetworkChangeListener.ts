@@ -1,4 +1,4 @@
-import { LauncherRuntimePersist } from "./../launcher/Launcher";
+import { LauncherRuntimePersist } from "../launcher/Launcher";
 import { IPCListener } from "./IPCListener";
 
 export class NetworkChangeListener implements IPCListener {

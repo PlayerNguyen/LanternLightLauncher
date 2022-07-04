@@ -1,44 +1,71 @@
-import chalk from "chalk";
+import chalk, { Chalk } from "chalk";
 import path from "path";
 import { AxiosResponse } from "axios";
 import fs from "fs";
-import { AxiosStreamLoader } from "./../utils/request/AxiosHelper";
-import stream from "node:stream";
-import { Queue } from "./../platforms/utils/queue/common/Queue";
-import { createSha1 } from "../platforms/crypto/common/Crypto";
-import { isNetworkOnline } from "./Launcher";
+import { AxiosStreamLoader } from "../utils/request/AxiosHelper";
+import stream from "stream";
+import pLimit from "p-limit";
 
-export interface ReferenceChecksum {
-  hash: string;
+import crypto, { createHash } from "crypto";
 
-  /**
-   * Create a hex hash value the hash variable
-   * @returns {string} a hash after stream as hex
-   */
-  createHash(data: string): string;
-  checksum(data: string): boolean;
-}
-
-export abstract class ReferenceChecksumAbstract {
-  hash: string;
-  constructor(hash: string) {
-    this.hash = hash;
-  }
-}
-
-export class ReferenceChecksumSHA1 extends ReferenceChecksumAbstract {
-  public createHash(data: string): string {
-    return createSha1(data);
-  }
-
-  checksum(data: string): boolean {
-    return this.createHash(data) === this.hash;
-  }
-}
+const MAX_DOWNLOAD_POOL_SIZE = 12;
+const limit = pLimit(MAX_DOWNLOAD_POOL_SIZE);
 
 export class ReferenceProgress {
   current: number = 0;
   length: number = 0;
+
+  constructor(length?: number) {
+    this.length = length ? length : 0;
+  }
+}
+
+export abstract class ReferenceHash {
+  providedHash: string | crypto.BinaryLike;
+  hash: crypto.Hash;
+
+  private algorithm: string;
+  private config?: crypto.HashOptions;
+
+  constructor(
+    providedHash: string | crypto.BinaryLike,
+    algorithm: string,
+    config?: crypto.HashOptions
+  ) {
+    this.providedHash = providedHash;
+    this.algorithm = algorithm;
+    this.config = config;
+
+    this.hash = createHash(algorithm, config);
+  }
+
+  public update(data: crypto.BinaryLike) {
+    return this.hash.update(data);
+  }
+
+  public digest(encoding: crypto.BinaryToTextEncoding): string {
+    return this.hash.digest(encoding);
+  }
+
+  public compareWithProvidedHash(): boolean {
+    return this.digest("hex") === this.providedHash;
+  }
+
+  public reset() {
+    this.hash = createHash(this.algorithm, this.config);
+  }
+}
+
+export class ReferenceHashSha1 extends ReferenceHash {
+  constructor(providedHash: string | crypto.BinaryLike) {
+    super(providedHash, "sha1");
+  }
+}
+
+export class ReferenceHashSha256 extends ReferenceHash {
+  constructor(providedHash: string | crypto.BinaryLike) {
+    super(providedHash, "sha256");
+  }
 }
 
 /**
@@ -48,173 +75,71 @@ export interface DownloadReference {
   name: string;
   path: string;
   url: string;
-  sum?: ReferenceChecksum; // Optional
+  size: number;
+
   progress: ReferenceProgress; // System base
+  hash?: ReferenceHash;
+  color: Chalk;
+  retryCount: number;
 }
 
 export class UrlDownloadReference implements DownloadReference {
   name: string;
   path: string;
   url: string;
-  sum?: ReferenceChecksum;
-  progress: ReferenceProgress;
 
+  progress: ReferenceProgress;
+  hash?: ReferenceHash;
+
+  size: number = 0;
+  color: Chalk;
+  retryCount = 0;
   constructor(
     name: string,
     path: string,
     url: string,
-    sum?: ReferenceChecksum
+    size?: number,
+    hash?: ReferenceHash
   ) {
     this.name = name;
     this.path = path;
     this.url = url;
-    this.progress = new ReferenceProgress();
-    this.sum = sum;
+    this.progress = new ReferenceProgress(size);
+    // this.sum = sum;
+    this.hash = hash;
+
+    if (chalk.level <= 2) {
+      let bg = [
+        chalk.bgBlue,
+        chalk.bgCyan,
+        chalk.bgGreenBright,
+        chalk.bgGreen,
+        chalk.bgYellow,
+      ];
+      this.color = bg[Math.floor(Math.random() * bg.length)];
+    } else {
+      const genRandom = () => Math.floor(Math.random() * 256);
+      this.color = chalk.rgb(genRandom(), genRandom(), genRandom());
+    }
+  }
+
+  public static createFromPath(
+    _path: string,
+    url: string,
+    size?: number,
+    hash?: ReferenceHash
+  ) {
+    let head = path.dirname(_path);
+    let filename = path.basename(_path);
+
+    return new UrlDownloadReference(filename, head, url, size, hash);
   }
 }
 
-export interface LaunchOptions {
+export interface DownloadOptions {
   maxRetry?: number;
-  onComplete?: (reference: DownloadReference) => void;
-  onFailed?: (error: Error, reference: DownloadReference) => void;
-}
-
-export class DownloadLaunchPad {
-  private launchpad: Queue<DownloadReference> = new Queue();
-
-  public async launch(launchOptions?: LaunchOptions): Promise<void> {
-    // If the launcher environment is offline, throw an exception
-    if (!isNetworkOnline()) {
-      throw new Error("No connection was established. Check your connection");
-    }
-
-    let _maxRetries =
-      launchOptions && launchOptions.maxRetry ? launchOptions.maxRetry : 3;
-    // Download every files tail-to-head
-    while (!this.launchpad.isEmpty()) {
-      let _currentItem = this.launchpad.pop();
-      let _retries = 0;
-
-      while (++_retries < _maxRetries) {
-        try {
-          // Download the current item
-          let _reference = await this.download(_currentItem);
-
-          // Execute onComplete
-          if (launchOptions && launchOptions.onComplete) {
-            launchOptions.onComplete(_reference);
-          }
-          break;
-        } catch (err) {
-          if (_retries === _maxRetries - 1) {
-            if (launchOptions && launchOptions.onFailed)
-              launchOptions.onFailed(err as Error, _currentItem);
-          } else {
-            _currentItem.progress.current = 0;
-          }
-        }
-      }
-    }
-  }
-
-  private async download(
-    _currentItem: DownloadReference
-  ): Promise<DownloadReference> {
-    return new Promise(async function callback(resolve, reject) {
-      // Pipe a data from current stream
-      let _data = await fetchStreamData(_currentItem);
-
-      // Create a stream to pipe data
-      let _path = path.join(_currentItem.path, _currentItem.name);
-
-      printDownloadWorker(`Downloading (${_currentItem.url}) -> (${_path})`);
-
-      //   Check if exists or not, unless exists, create a new one
-      if (!fs.existsSync(_currentItem.path)) {
-        fs.mkdirSync(_currentItem.path, { recursive: true });
-      }
-
-      // Update a size of file
-      if (_currentItem.progress) {
-        // console.log(_data.headers["content-length"]);
-
-        _currentItem.progress.length = Number.parseInt(
-          _data.headers["content-length"]
-        );
-      }
-
-      // Create a WriteStream to write all data
-      let _stream = fs.createWriteStream(_path, {
-        highWaterMark: 1024 * 1024,
-      });
-
-      // Pipe the stream
-      _data.data
-        .on("error", (error) => {
-          reject(error);
-        })
-        .on("data", (chunk) => {
-          if (_currentItem.progress) {
-            let _progress = _currentItem.progress;
-            _progress.current += chunk.length;
-
-            printDownloadWorker(
-              `${chalk.grey(_currentItem.name)} ~ [${
-                _progress.current <= _progress.length / 2
-                  ? chalk.red(_progress.current)
-                  : _progress.current <= _progress.length * (4 / 5)
-                  ? chalk.yellow(_progress.current)
-                  : chalk.green(_progress.current)
-              }${chalk.gray(`/`)}${chalk.green(_progress.length)}]`
-            );
-          }
-        })
-        .pipe(_stream);
-
-      _stream.on("finish", () => {
-        if (_currentItem.sum) {
-          let _ = fs.readFileSync(_path, { encoding: "utf-8" });
-          printDownloadWorker(`Executing check-sum: `);
-          printDownloadWorker(
-            `Provide: ${chalk.bgYellow(_currentItem.sum.hash)}`
-          );
-          printDownloadWorker(
-            `Target:  ${
-              _currentItem.sum.checksum(_)
-                ? chalk.bgGreen(_currentItem.sum.createHash(_))
-                : chalk.bgRed(_currentItem.sum.createHash(_))
-            }`
-          );
-
-          // Failed to checksum, try to download the file again and checksum
-          if (!_currentItem.sum.checksum(_)) {
-            reject(new Error("Failed to check sum"));
-            // printDownloadWorker(`Failed to check sum`);
-          } else {
-            resolve(_currentItem);
-          }
-        } else {
-          // Execute onComplete
-          resolve(_currentItem);
-        }
-      });
-    });
-  }
-
-  public addReference(reference: DownloadReference): DownloadReference {
-    return this.launchpad.push(reference);
-  }
-}
-
-export class LauncherDownLoadWorker {
-  private static _launchpad: DownloadLaunchPad;
-
-  public static getLaunchPad(): DownloadLaunchPad {
-    if (this._launchpad == undefined) {
-      this._launchpad = new DownloadLaunchPad();
-    }
-    return this._launchpad;
-  }
+  onData?: (ref: DownloadReference, data: any) => void;
+  verbose?: false | boolean;
 }
 
 function fetchStreamData(
@@ -223,12 +148,187 @@ function fetchStreamData(
   return AxiosStreamLoader.get(reference.url);
 }
 
-function printDownloadWorker(things: any) {
+export function printDownloadWorker(things: any) {
   console.log(
     `${chalk.gray(
       `[DownloadWorker] ${
-        typeof things === "object" ? things.toString() : things
+        typeof things === "object" ? JSON.stringify(things, null, 2) : things
       }`
     )}`
   );
+}
+
+export function createSha1CheckSum(hash: string) {
+  return new ReferenceHashSha1(hash);
+}
+
+export function createSha256Checksum(hash: string) {
+  return new ReferenceHashSha256(hash);
+}
+
+export class DownloadWorker {
+  private static instance?: DownloadWorker = undefined;
+  private pendingItems: DownloadReference[] = [];
+
+  public static getInstance() {
+    if (this.instance === undefined) {
+      this.instance = new DownloadWorker();
+    }
+
+    return this.instance;
+  }
+
+  public push(ref: DownloadReference): DownloadWorker {
+    this.pendingItems.push(ref);
+    return this;
+  }
+
+  public pushAll(refs: DownloadReference[]): DownloadWorker {
+    this.pendingItems = [...this.pendingItems, ...refs];
+    return this;
+  }
+
+  public downloadAllPendingItems(
+    config?: DownloadOptions
+  ): Promise<DownloadReference[]> {
+    let _cacheItems = [...this.pendingItems];
+    this.pendingItems = [];
+
+    return Promise.all([
+      ..._cacheItems.map((item) =>
+        limit(async () => await this.download(item, config))
+      ),
+    ]);
+  }
+
+  public async download(
+    ref: DownloadReference,
+    config?: DownloadOptions
+  ): Promise<DownloadReference> {
+    // Remove it out of the download reference
+    if (this.pendingItems.includes(ref)) {
+      this.pendingItems = this.pendingItems.filter((_ref) => _ref !== ref);
+    }
+
+    printDownloadWorker(`Downloading ${path.join(ref.path, ref.name)} file`);
+
+    // Fetch the data as stream from AxiosStreamLoader
+    let response = await fetchStreamData(ref);
+
+    // Resolve file path by merge path and name together
+    let filePath = path.join(ref.path, ref.name);
+
+    // Make a dir if the dirname is not found
+    if (!fs.existsSync(path.dirname(filePath))) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    }
+
+    // Update size if the size is zero
+    if (!ref.size || ref.size === 0) {
+      ref.progress.length = parseInt(response.headers["content-length"]);
+    }
+
+    let writeStream = fs.createWriteStream(filePath);
+
+    // Pipe it into a write stream
+    let readStream = response.data.on("data", (chunk: any) => {
+      ref.progress.current += chunk.length;
+      // console.log(ref.color);
+
+      if (
+        config?.verbose &&
+        (ref.progress.current % 10 == 0 ||
+          ref.progress.current === ref.progress.length)
+      ) {
+        printDownloadWorker(
+          `(${ref.color(ref.name)}) [${chalk.yellow(
+            ref.progress.current
+          )}/${chalk.green(ref.progress.length)}] ${
+            ref.progress.current === ref.progress.length
+              ? chalk.bgGreen(`[finished]`)
+              : ``
+          }`
+        );
+      }
+
+      // Call event
+      if (config && config.onData) config.onData(ref, chunk);
+    });
+
+    const promisePipeWrite = new Promise<void>((res, rej) => {
+      stream.pipeline(readStream, writeStream, (err) => {
+        if (err) rej();
+        else res();
+      });
+    });
+
+    // On finish, resolve the promise
+    // writeStream.on("finish", () => {
+    //   console.log(
+    //     `Finished download ${ref.color(path.join(ref.path, ref.name))}`
+    //   );
+
+    //   fulfill(ref);
+    // });
+
+    // After finished writing things, start to check hash of the file
+    const promiseHashChecker = new Promise<boolean>((res, rej) => {
+      promisePipeWrite
+        .then(() => {
+          if (!ref.hash) {
+            return res(true);
+          }
+
+          let _d = fs.createReadStream(filePath);
+          _d.on("data", (chunk) => {
+            if (ref.hash) ref.hash.update(chunk);
+          })
+            .on("close", () => {
+              if (ref.hash) res(ref.hash.compareWithProvidedHash());
+              else res(true);
+            })
+            .on("error", (err) => rej(err));
+        })
+        .catch(rej);
+    });
+
+    let resultPromise = new Promise<DownloadReference>((res, rej) => {
+      let maxAttempt = (config && config.maxRetry) || 3;
+      promiseHashChecker.then((isValidated) => {
+        if (!isValidated) {
+          if (ref.retryCount < maxAttempt) {
+            ref.retryCount++;
+
+            // Reset a hash and length count
+            ref.hash?.reset();
+            ref.progress.current = 0;
+
+            // If verbose, show the warning
+            if (config?.verbose) {
+              printDownloadWorker(
+                chalk.red(
+                  `Failed to checksum ${ref.name}, trying to download again [attempt (${ref.retryCount} / ${maxAttempt})]`
+                )
+              );
+            }
+
+            // Attempt to download again
+            this.download(ref, config);
+          } else {
+            // Remove the file
+            fs.rmSync(filePath);
+            return rej(new Error("Invalid sum hash or data was incorrect"));
+          }
+        } else {
+          res(ref);
+        }
+      });
+    });
+
+    return resultPromise;
+  }
+}
+
+export function getDownloadWorker() {
+  return DownloadWorker.getInstance();
 }

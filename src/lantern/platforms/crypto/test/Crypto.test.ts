@@ -1,5 +1,6 @@
+import crypto from "crypto";
 import { expect } from "chai";
-import { createSha1 } from "../common/Crypto";
+import { createSha1, createSHA256 } from "../common/Crypto";
 
 describe("Crypto", () => {
   describe("createSha1", () => {
@@ -21,6 +22,32 @@ describe("Crypto", () => {
       _sample.forEach(({ input, output }) => {
         expect(createSha1(input)).to.equal(output);
       });
+    });
+    it(`Empty input`, () => {
+      expect(() => {
+        // @ts-ignore
+        createSha1(undefined as crypto.BinaryLike);
+      }).throws();
+    });
+  });
+  describe("createSha256", () => {
+    let _sample = [
+      {
+        input: "lorem isuw juszj nanix mo hamster unicorn",
+        output:
+          "90151213a11cedc26a1b1c3f5bbd84fb724877aee170a2d1beabd5c2fab10e68",
+      },
+    ];
+    it(`Create expected value`, () => {
+      _sample.forEach(({ input, output }) => {
+        expect(createSHA256(input)).to.equal(output);
+      });
+    });
+    it(`Empty input`, () => {
+      expect(() => {
+        // @ts-ignore
+        createSHA256(undefined as crypto.BinaryLike);
+      }).throws();
     });
   });
 });
