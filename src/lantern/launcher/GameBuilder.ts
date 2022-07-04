@@ -385,17 +385,6 @@ export class LibraryParser {
   public static createDownloadReferences(
     libraries: MinecraftVersionMetadataLibrary[]
   ) {
-    // return this.getCompatibleLibraries(libraries)
-    //   .map((artifact) => {
-    //     return UrlDownloadReference.createFromPath(
-    //       path.join(getGameLibrariesDirectoryPath(), artifact.path.toString()),
-    //       artifact.url.toString(),
-    //       artifact.size,
-    //       new ReferenceChecksumSHA1(artifact.sha1)
-    //     );
-    //   })
-    //   .filter((reference) => !fs.existsSync(reference.path));
-
     let refs: DownloadReference[] = [];
     this.getCompatibleLibraries(libraries).forEach((lib) => {
       if (lib.natives && lib.downloads.classifiers) {
@@ -466,7 +455,7 @@ export class LibraryParser {
 }
 
 export class ArgumentParser {
-  public static fromArguments(args: any, replacer?: Map<string, string>) {
+  public static fromArguments(args: any) {
     let argumentBuilder: string[] = [];
 
     // Build the argument for runtime first O(n)
