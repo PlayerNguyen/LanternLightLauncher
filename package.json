@@ -11,6 +11,8 @@
     "cli": "cross-env NODE_ENV=cli ts-node ./src/cli/LauncherCLI.ts"
   },
   "devDependencies": {
+    "@parcel/transformer-sass": "2.6.0",
+    "@reduxjs/toolkit": "^1.8.3",
     "@types/chai": "^4.3.1",
     "@types/decompress": "^4.2.4",
     "@types/mocha": "^9.1.1",
@@ -19,6 +21,7 @@
     "@xingrz/decompress": "^5.2.0-alpha.1",
     "@xingrz/decompress-targz": "^5.2.0-alpha.0",
     "@xingrz/decompress-unzip": "^5.2.0-alpha.0",
+    "autoprefixer": "^10.4.7",
     "axios": "^0.27.2",
     "chai": "^4.3.6",
     "concurrently": "^7.2.2",
@@ -30,8 +33,13 @@
     "electronmon": "^2.0.2",
     "nyc": "^15.1.0",
     "p-limit": "3.1.0",
+    "postcss": "^8.4.14",
+    "postcss-loader": "^7.0.0",
     "prettier": "2.7.1",
     "process": "^0.11.10",
+    "react-icons": "^4.4.0",
+    "react-redux": "^8.0.2",
+    "tailwindcss": "^3.1.4",
     "ts-mocha": "^10.0.0",
     "typescript": "^4.7.3",
     "wait-on": "^6.0.1"

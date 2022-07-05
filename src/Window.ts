@@ -19,6 +19,7 @@ export function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, "Preload.js"),
     },
+    titleBarStyle: "hiddenInset",
   });
 
   // and load the index.html of the app.

@@ -1,3 +1,5 @@
+import { SetLanguageListener } from "./../lantern/listener/SetLanguageListener";
+import { GetLanguageListener } from "./../lantern/listener/GetLanguageListener";
 import { ipcMain } from "electron";
 import { NetworkChangeListener } from "../lantern/listener/NetworkChangeListener";
 import { IPCListenerManager } from "../lantern/listener/IPCListener";
@@ -43,6 +45,8 @@ async function loadConfiguration() {
 async function loadListener() {
   listenerManager = new IPCListenerManager();
   listenerManager.listeners.push(new NetworkChangeListener());
+  listenerManager.listeners.push(new GetLanguageListener());
+  listenerManager.listeners.push(new SetLanguageListener());
   listenerManager.listeners.forEach((e) => {
     ipcMain.on(e.name, e.onListen);
   });

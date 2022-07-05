@@ -1,0 +1,15 @@
+.sidebar {
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+
+  .sidebar-traffic-region {
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  .sidebar-content {
+    // The sidebar content is not drag gable.
+    -webkit-user-select: none;
+    -webkit-app-region: no-drag;
+  }
+}
