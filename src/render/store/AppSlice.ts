@@ -1,8 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// window.api.send('lantern:get-language');
-// window.api.on('lantern:get-language', (event, language) => {})
-const initialState = {
+export interface AppSliceInterface {
+  language: string;
+  versions: Array<{
+    id: string;
+    type: "release" | "snapshot";
+  }>;
+}
+const initialState: AppSliceInterface = {
   language: "en",
   versions: [],
 };
@@ -21,6 +26,6 @@ const AppSlice = createSlice({
   },
 });
 
-export const { setLanguage } = AppSlice.actions;
+export const { setLanguage, setVersions } = AppSlice.actions;
 
 export default AppSlice.reducer;

@@ -7,6 +7,8 @@ export interface LauncherConfigOfflineProfile {
 
 export interface LauncherConfig {
   offline: LauncherConfigOfflineProfile;
+  lastSelectedVersion: string;
+  allowSnapshot: boolean;
   language: string;
 }
 
@@ -14,6 +16,8 @@ export const LauncherConfigDefaults: LauncherConfig = {
   offline: {
     username: "Player_Nguyen",
   },
+  lastSelectedVersion: "latest",
+  allowSnapshot: false,
   language: "en",
 };
 

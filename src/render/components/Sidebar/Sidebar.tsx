@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { ImBarcode, ImHome } from "react-icons/im";
+
+import {
+  AiOutlineHome,
+  AiFillHome,
+  AiOutlineSetting,
+  AiFillSetting,
+} from "react-icons/ai";
 import { useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import Language from "../../locates/Language";
@@ -11,12 +17,14 @@ export default function Sidebar() {
 
   let [sidebarData] = useState([
     {
-      icon: <ImHome />,
+      icon: <AiOutlineHome />,
+      filledIcon: <AiFillHome />,
       text: Language[app.language].sidebar.home,
       href: "/",
     },
     {
-      icon: <ImBarcode />,
+      icon: <AiOutlineSetting />,
+      filledIcon: <AiFillSetting />,
       text: Language[app.language].sidebar.settings,
       href: "/settings",
     },
@@ -44,7 +52,11 @@ export default function Sidebar() {
                 to={data.href}
               >
                 <div className="text-xl">
-                  <a>{data.icon}</a>
+                  <i>
+                    {location.pathname === data.href
+                      ? data.filledIcon
+                      : data.icon}
+                  </i>
                 </div>
                 <div className="absolute hidden left-[76px] bg-zinc-800 px-2 py-3 font-light w-[100px] rounded-r-lg text-center">
                   {data.text}

@@ -138,3 +138,7 @@ export function setNetworkOnline(value: boolean) {
     ? "online"
     : "offline";
 }
+
+export function getLauncherConfigProvider() {
+  return Launcher.getInstance().getConfigProvider();
+}

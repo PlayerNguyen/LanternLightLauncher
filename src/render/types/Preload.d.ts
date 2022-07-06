@@ -1,5 +1,6 @@
 import { IpcRendererEvent } from "electron";
 export {};
+
 interface IElectronAPI {
   send: (channel: string, ...args: any[]) => void;
   on: (

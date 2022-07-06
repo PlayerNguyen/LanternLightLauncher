@@ -9,7 +9,6 @@ import dUnzip from "@xingrz/decompress-unzip";
 import {
   GameRuleAction,
   getVersionMetadata,
-  MinecraftVersionArgument,
   MinecraftVersionMetadataLibrary,
   RuleOperatingSystem,
 } from "./LauncherVersion";
@@ -112,10 +111,10 @@ export async function buildJavaRuntime(majorVersionId: number) {
 
     let runtimeOutput = getDownloadedRuntimeFilePath();
     console.log(`runtimeOutput: `, runtimeOutput);
-
+    let _plug = fileName.includes(".tar.gz") ? [dTarGz()] : [dUnzip()];
     // Extract the runtime and rename it
     await decompress(fileLocation, getDownloadedRuntimeDirPath(), {
-      plugins: fileName.includes(".tar.gz") ? [dTarGz()] : [dUnzip()],
+      plugins: [dTarGz()],
     });
 
     // Rename into a version

@@ -1,13 +1,20 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import Sidebar from "./components/Sidebar/Sidebar";
-import { useLauncherLanguage } from "./hook/useLancherLanguage";
+import { useLauncherConfiguration } from "./hook/useLauncherConfiguration";
+import { useLauncherLanguage } from "./hook/useLauncherLanguage";
+import { useMinecraftVersions } from "./hook/useMinecraftVersions";
 import { useNetworkChangeListener } from "./hook/useNetworkChangeListener";
 import Home from "./pages/Home/Home";
-import UnknownPage from "./pages/UnknowPage/UnknownPage";
+import UnknownPage from "./pages/UnknownPage/UnknownPage";
 
 export default function App() {
+  /**
+   *
+   */
+  let { configuration } = useLauncherConfiguration();
+
   /**
    * Catch the network change event and send ipc to main-thread.
    */
@@ -19,8 +26,16 @@ export default function App() {
    */
   useLauncherLanguage();
 
+  /**
+   * Init the home
+   */
+  useMinecraftVersions();
+
+  /**
+   * Render the app.
+   */
   return (
-    <div>
+    <div className="fixed w-full h-full bg-[#ebebeb]">
       <div className="navbar-wrapper">
         <Navbar />
       </div>
