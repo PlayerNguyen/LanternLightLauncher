@@ -2,9 +2,6 @@ import chalk from "chalk";
 
 import os from "os";
 import fs from "fs";
-import decompress from "@xingrz/decompress";
-import dTarGz from "@xingrz/decompress-targz";
-import dUnzip from "@xingrz/decompress-unzip";
 
 import {
   GameRuleAction,
@@ -43,6 +40,7 @@ import {
   isWindows,
 } from "../platforms/environment/common/Environment";
 import { getLauncherMetadata } from "./Launcher";
+import { ArchiveExtract } from "../utils/archives/ArchiveExtract";
 
 /**
  * Checks and downloads java runtime.
@@ -111,23 +109,32 @@ export async function buildJavaRuntime(majorVersionId: number) {
 
     let runtimeOutput = getDownloadedRuntimeFilePath();
     console.log(`runtimeOutput: `, runtimeOutput);
-    let _plug = fileName.includes(".tar.gz") ? [dTarGz()] : [dUnzip()];
+
+    // let _plug = fileName.includes(".tar.gz") ? [dTarGz()] : [dUnzip()];
     // Extract the runtime and rename it
-    await decompress(fileLocation, getDownloadedRuntimeDirPath(), {
-      plugins: [dTarGz()],
-    });
 
-    // Rename into a version
-    let _extractUnsanitizedFile = path.join(
-      getDownloadedRuntimeDirPath(),
-      fs
-        .readdirSync(getDownloadedRuntimeDirPath())
-        .filter((name) => name.includes("jdk-"))[0]
-    );
+    // await decompress(fileLocation, getDownloadedRuntimeDirPath(), {
+    //   plugins: [dTarGz()],
+    // });
+    try {
+      ArchiveExtract.extract(fileLocation, getDownloadedRuntimeDirPath()).then(
+        () => {
+          // Rename into a version
+          let _extractUnsanitizedFile = path.join(
+            getDownloadedRuntimeDirPath(),
+            fs
+              .readdirSync(getDownloadedRuntimeDirPath())
+              .filter((name) => name.includes("jdk-"))[0]
+          );
 
-    fs.renameSync(_extractUnsanitizedFile, runtimeOutput);
-    // Then remove archive file
-    fs.rmSync(fileLocation, { force: true, recursive: true });
+          fs.renameSync(_extractUnsanitizedFile, runtimeOutput);
+          // Then remove archive file
+          fs.rmSync(fileLocation, { force: true, recursive: true });
+        }
+      );
+    } catch (err) {
+      throw err;
+    }
     return;
   }
 
