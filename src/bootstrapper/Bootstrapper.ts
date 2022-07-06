@@ -1,3 +1,7 @@
+import { LaunchMinecraftListener } from "./../lantern/listener/LaunchMinecraftListener";
+import { SetLauncherConfigurationListener } from "./../lantern/listener/SetLauncherConfigurationListener";
+import { SetLanguageListener } from "./../lantern/listener/SetLanguageListener";
+import { GetLanguageListener } from "./../lantern/listener/GetLanguageListener";
 import { ipcMain } from "electron";
 import { NetworkChangeListener } from "../lantern/listener/NetworkChangeListener";
 import { IPCListenerManager } from "../lantern/listener/IPCListener";
@@ -7,6 +11,8 @@ import {
   isDevelopment,
 } from "../lantern/platforms/environment/common/Environment";
 import { Launcher } from "../lantern/launcher/Launcher";
+import { GetMinecraftVersionListener } from "../lantern/listener/GetMinecraftVersionsListener";
+import { GetLauncherConfigurationListener } from "../lantern/listener/GetLauncherConfigurationListener";
 
 let listenerManager: IPCListenerManager;
 let launcher: Launcher;
@@ -43,6 +49,12 @@ async function loadConfiguration() {
 async function loadListener() {
   listenerManager = new IPCListenerManager();
   listenerManager.listeners.push(new NetworkChangeListener());
+  listenerManager.listeners.push(new GetLanguageListener());
+  listenerManager.listeners.push(new SetLanguageListener());
+  listenerManager.listeners.push(new GetMinecraftVersionListener());
+  listenerManager.listeners.push(new GetLauncherConfigurationListener());
+  listenerManager.listeners.push(new SetLauncherConfigurationListener());
+  listenerManager.listeners.push(new LaunchMinecraftListener());
   listenerManager.listeners.forEach((e) => {
     ipcMain.on(e.name, e.onListen);
   });
