@@ -1,65 +1,174 @@
 {
+  "name": "lantern-light",
   "version": "1.0.0",
   "license": "MIT",
+  "main": "./dist/src/App.js",
   "scripts": {
     "dev": "node ./scripts/check-port.js && npm run dev:watch",
     "dev:watch": "concurrently \"npm:dev:watch-*\" -k",
     "dev:watch-tsc": "tsc --build --clean && tsc -w",
     "dev:watch-electron": "wait-on file:./dist/src/App.js && cross-env NODE_ENV=development electronmon ./dist/src/App.js",
-    "dev:watch-parcel": "cross-env PORT=1234 parcel serve ./src/render/Index.html --no-cache --dist-dir ./dist/render",
+    "dev:watch-parcel": "cross-env PORT=1234 parcel serve ./src/render/Index.html --no-cache --dist-dir ./dist/src/render --public-url=\"./\"",
     "test": "cross-env NODE_ENV=test nyc mocha -r ts-node/register ./src/**/*.test.ts",
-    "cli": "cross-env NODE_ENV=cli ts-node ./src/cli/LauncherCLI.ts"
+    "cli": "cross-env NODE_ENV=cli ts-node ./src/cli/LauncherCLI.ts",
+    "build": "cross-env NODE_ENV=development parcel build --no-cache",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "pack": "electron-builder --dir",
+    "compile": "electron-webpack",
+    "dist": "yarn build && node ./scripts/dist.js",
+    "clean": "node ./scripts/clean-up.js"
+  },
+  "browserslist": [
+    "> 5%"
+  ],
+  "targets": {
+    "main": false,
+    "renderer": {
+      "distDir": "./dist/src/render",
+      "publicUrl": "./",
+      "source": "./src/render/Index.html",
+      "context": "browser",
+      "outputFormat": "global",
+      "engines": {
+        "browsers": "> 5%"
+      },
+      "isLibrary": false
+    },
+    "electron": {
+      "distDir": "./dist/src",
+      "publicUrl": "./",
+      "source": [
+        "./src/App.ts",
+        "./src/Preload.ts"
+      ],
+      "isLibrary": false,
+      "context": "electron-main",
+      "outputFormat": "commonjs",
+      "engines": {
+        "electron": ">= 1.3.0"
+      }
+    }
+  },
+  "build": {
+    "productName": "Lantern Light",
+    "appId": "com.github.playernguyen.LanternLight",
+    "files": [
+      "dist/src/**/*.{js,js.map,ts,ts.map,html,css,json,png,jpg,jpeg,gif,svg,woff,woff2,ttf,eot}",
+      "node_modules"
+    ],
+    "mac": {
+      "category": "your.app.category.type"
+    },
+    "asar": false
+  },
+  "electronWebpack": {
+    "commonSourceDirectory": "common",
+    "main": {
+      "sourceDirectory": "./dist/src"
+    },
+    "renderer": {
+      "sourceDirectory": null
+    }
   },
   "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.64",
+    "@electron-forge/maker-deb": "^6.0.0-beta.64",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.64",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.64",
+    "@electron-forge/maker-zip": "^6.0.0-beta.64",
     "@parcel/transformer-sass": "2.6.0",
     "@reduxjs/toolkit": "^1.8.3",
     "@types/chai": "^4.3.1",
     "@types/decompress": "^4.2.4",
+    "@types/detect-port": "^1.3.2",
     "@types/gunzip-maybe": "^1.4.0",
     "@types/mocha": "^9.1.1",
     "@types/react": "^18.0.14",
     "@types/react-dom": "^18.0.5",
     "@types/tar-fs": "^2.0.1",
     "@types/unzipper": "^0.10.5",
+    "@types/yargs": "^17.0.10",
+    "assert": "^2.0.0",
     "autoprefixer": "^10.4.7",
-    "axios": "^0.27.2",
     "chai": "^4.3.6",
     "concurrently": "^7.2.2",
+    "constants-browserify": "^1.0.0",
+    "crypto-browserify": "^3.12.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "decompress-unzip": "^4.0.1",
     "detect-port": "^1.3.0",
+    "electron": "^19.0.4",
+    "electron-builder": "^23.1.0",
     "electron-mocha": "^11.0.2",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-webpack": "^2.8.2",
     "electronmon": "^2.0.2",
-    "gunzip-maybe": "^1.4.2",
+    "events": "^3.3.0",
+    "mocha": "^10.0.0",
     "nyc": "^15.1.0",
-    "p-limit": "3.1.0",
+    "os-browserify": "^0.3.0",
+    "parcel": "^2.6.0",
+    "path-browserify": "^1.0.1",
     "postcss": "^8.4.14",
     "postcss-loader": "^7.0.0",
     "prettier": "2.7.1",
     "process": "^0.11.10",
-    "react-icons": "^4.4.0",
+    "querystring-es3": "^0.2.1",
     "react-redux": "^8.0.2",
+    "react-router-dom": "^6.3.0",
+    "stream-browserify": "^3.0.0",
     "tailwindcss": "^3.1.4",
-    "tar-fs": "^2.1.1",
     "ts-mocha": "^10.0.0",
+    "ts-node": "^10.8.1",
     "typescript": "^4.7.3",
-    "unzipper": "^0.10.11",
-    "wait-on": "^6.0.1"
+    "url": "^0.11.0",
+    "util": "^0.12.4",
+    "wait-on": "^6.0.1",
+    "webpack": "^5.73.0"
   },
   "dependencies": {
-    "@types/detect-port": "^1.3.2",
-    "@types/yargs": "^17.0.10",
-    "chalk": "4.1.2",
+    "axios": "^0.27.2",
     "cross-env": "^7.0.3",
-    "electron": "^19.0.4",
-    "mocha": "^10.0.0",
-    "parcel": "^2.6.0",
+    "chalk": "4.1.2",
     "query-string": "^7.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.3.0",
-    "ts-node": "^10.8.1",
-    "yargs": "^17.5.1"
+    "react-icons": "^4.4.0",
+    "source-map-support": "^0.5.21",
+    "yargs": "^17.5.1",
+    "p-limit": "3.1.0",
+    "tar-fs": "^2.1.1",
+    "unzipper": "^0.10.11",
+    "gunzip-maybe": "^1.4.2"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "LanternLauncher.exe"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
   }
 }
