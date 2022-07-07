@@ -5,9 +5,10 @@ import { isDevelopment } from "./lantern/platforms/environment/common/Environmen
 const PORT: string = process.env.PORT || String(1234);
 
 function resolveRenderPath() {
-  return isDevelopment()
-    ? `http://localhost:${PORT}`
-    : "file://" + path.resolve(__dirname, "../dist/src/render/Index.html");
+  // return isDevelopment()
+  //   ? `http://localhost:${PORT}`
+  //   : "file://" + path.resolve(__dirname, "../dist/src/render/Index.html");
+  return "file://" + path.resolve(__dirname, "../dist/src/render/Index.html");
 }
 
 export function createWindow() {
@@ -20,7 +21,7 @@ export function createWindow() {
       contextIsolation: true,
       preload: app.isPackaged
         ? path.join(__dirname, "..", "dist", "src", "Preload.js")
-        : path.join(__dirname, "Preload.ts"),
+        : path.join(__dirname, "..", "dist", "src", "Preload.js"),
     },
     titleBarStyle: "hiddenInset",
   });

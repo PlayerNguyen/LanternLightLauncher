@@ -9,6 +9,9 @@
     "dev:watch-tsc": "tsc --build --clean && tsc -w",
     "dev:watch-electron": "wait-on file:./dist/src/App.js && cross-env NODE_ENV=development electronmon ./dist/src/App.js",
     "dev:watch-parcel": "cross-env PORT=1234 parcel serve ./src/render/Index.html --no-cache --dist-dir ./dist/src/render --public-url=\"./\"",
+    "watch": "concurrently \"npm:watch-*\" -k --kill-others --restart-delay 1 ",
+    "watch-parcel": "cross-env NODE_ENV=development parcel watch --no-cache",
+    "watch-electron": "wait-on file:./dist/src/App.js && cross-env NODE_ENV=development electronmon ./dist/src/App.js",
     "test": "cross-env NODE_ENV=test nyc mocha -r ts-node/register ./src/**/*.test.ts",
     "cli": "cross-env NODE_ENV=cli ts-node ./src/cli/LauncherCLI.ts",
     "build": "cross-env NODE_ENV=development parcel build --no-cache",
@@ -16,7 +19,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "pack": "electron-builder --dir",
-    "compile": "electron-webpack",
+    "postinstall": "electron-builder install-app-deps",
     "dist": "yarn build && node ./scripts/dist.js",
     "clean": "node ./scripts/clean-up.js"
   },

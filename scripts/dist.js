@@ -12,7 +12,6 @@ const options = {
     "./dist/src/**/*",
     "!./.parcel-cache",
     "!./scripts",
-    // Disabled all json configurations
     "!._*",
     "!./.github",
     "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -28,15 +27,15 @@ const options = {
     "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
   ],
   // "store” | “normal” | "maximum". - For testing builds, use 'store' to reduce build time significantly.
-  compression: "store",
-  removePackageScripts: true,
+  compression: "normal",
+  // removePackageScripts: true,
   directories: {
     output: "out",
   },
   extraMetadata: {
     main: "./dist/src/App.js",
   },
-  buildDependenciesFromSource: false,
+  // buildDependenciesFromSource: false,
   beforeBuild: async () => {
     // console.log(chalk.yellow(`Checking for src...`));
     if (!fs.existsSync("dist/src")) {
